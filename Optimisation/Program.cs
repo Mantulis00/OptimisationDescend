@@ -146,6 +146,63 @@ namespace Optimisation
 
             return new Vector2((float)A, (float)B);
         }
+
+        #region Simplex
+
+        /// <summary>
+        /// xh - taskas kur tikslo funkcijos reiksme didziausia
+        /// xg - antra pagal dydi
+        /// xl - maziausia
+        /// xc - (xg+xl)/2
+        /// </summary>
+
+
+        private static Vector2 NewPoint(Vector2 xh, Vector2 xg, Vector2 xl)
+        {
+            Vector2 xsum = xg + xl;
+            Vector2 xc = new Vector2(xsum.Y / 2, xsum.Y / 2);
+
+
+            float lambda = 1;// + GetStopSign();
+
+            Vector2 vector = xc - xh;
+            return xh +  new Vector2(vector.X * lambda, vector.Y * lambda);
+        }
+
+        private static double GetStopSign(Vector3 vg, Vector2 xh, Vector2 xc, Vector2 xl, Vector2 np)
+        {
+            double Vh = Volume(xh.X, xh.Y);
+            double Vc = Volume(xc.X, xc.Y);
+            double Vl = Volume(xl.X, xl.Y);
+            double Vg = Volume(vg.X, vg.Y);
+
+            double Vnp = Volume(np.X, np.Y);
+
+            if (Vl < Vnp && Vnp < Vg) return 1;
+            if (Vnp < Vl) return gamma;
+            if (Vnp > Vh) return fi;
+            if (Vg < Vnp && Vnp < Vh) return beta;
+
+            return 1;
+
+        }
+
+
+        private static double gamma = 2, beta = 0.5, fi = -0.5;
+
+        public static Vector2 SearchSimplex(double A, double B)// start point
+        {
+
+
+        }
+
+
+
+        #endregion
+
+
+
+
     }
 
 
