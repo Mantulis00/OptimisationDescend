@@ -167,7 +167,10 @@ namespace Optimisation
             Vector2 vector = xc - xh;
             Vector2 np = xc + new Vector2(vector.X, vector.Y);
 
-            float lambda = GetStopSign(xh, xg, xl, np); 
+
+            float lambda = GetStopSign(xh, xg, xl, np);
+            Console.WriteLine(lambda);
+
             return  xc + new Vector2(vector.X * lambda, vector.Y * lambda);
         }
 
@@ -177,6 +180,8 @@ namespace Optimisation
             double Vl = Volume(xl.X, xl.Y);
             double Vg = Volume(xg.X, xg.Y);
             double Vnp = Volume(np.X, np.Y);
+
+
 
             if (Vg < Vnp && Vnp < Vl) return beta;
             if (Vnp > Vl) return gamma;
@@ -195,8 +200,8 @@ namespace Optimisation
             Vector2 dirAntiClock = new Vector2(-dir.Y,dir.X);
 
             Vector2 p1 = new Vector2((float)A, (float)B);
-            Vector2 p2 = p1 + new Vector2(dir.X + dirClock.X / 2, dir.Y + dirClock.Y / 2);
-            Vector2 p3 = p1 + new Vector2(dir.X + dirAntiClock.X / 2, dir.Y + dirAntiClock.Y / 2);
+            Vector2 p2 = p1 + new Vector2(dir.X + dirClock.X, dir.Y + dirClock.Y);
+            Vector2 p3 = p1 + new Vector2(dir.X + dirAntiClock.X, dir.Y + dirAntiClock.Y);
 
             return new List<Vector2>() { p1, p2, p3 };
         }
@@ -207,16 +212,21 @@ namespace Optimisation
 
         public static Vector2 SearchSimplex(double A, double B)// start point
         {
-            List<Vector2> Points = InitPoints(A, B, 1);
+            List<Vector2> Points = InitPoints(A, B, 0.5);
             Points = Points.OrderBy(i => Volume(i.X, i.Y)).ToList();
 
             Vector2 np = Points[2];
             int n = 0;
 
-            Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", A, B, Volume(A, B)));
+            Console.WriteLine(B.ToString().Replace(",", "."));
             while (n < 1000)
             { 
                 np = NewPoint(Points[0], Points[1], Points[2]);
+
+                A = np.X;
+                B = np.Y;
+                Console.WriteLine(B.ToString().Replace(",", "."));
+
                 if ((np-Points[0]).Length() < epsilon/1000000) 
                     break;
 
@@ -224,13 +234,10 @@ namespace Optimisation
                 Points = Points.OrderBy(i => Volume(i.X, i.Y)).ToList();
 
 
-                A = Points[0].X;
-                B = Points[0].Y;
-                Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", A, B, Volume(A, B)));
+               
 
                 n++;
             }
-            Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", A, B, Volume(A, B)));
 
             Console.WriteLine(n);
 
@@ -255,7 +262,7 @@ namespace Optimisation
     {
         static void Main(string[] args)
         {
-            Optimizator.SearchSimplex(0.5, 0.3);
+            Optimizator.SearchSimplex(1, 1);
         }
     }
 }
