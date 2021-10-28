@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace Optimisation
@@ -163,7 +165,7 @@ namespace Optimisation
             Vector2 xc = new Vector2(xsum.Y / 2, xsum.Y / 2);
 
 
-            float lambda = 1;// + GetStopSign();
+            float lambda = 1 + GetStopSign();
 
             Vector2 vector = xc - xh;
             return xh +  new Vector2(vector.X * lambda, vector.Y * lambda);
@@ -184,14 +186,34 @@ namespace Optimisation
             if (Vg < Vnp && Vnp < Vh) return beta;
 
             return 1;
-
         }
+
+        private static List<Vector2> InitPoints(double A, double B, double size)
+        {
+            Vector2 dir = new Vector2((float)DirectionA(A, B), (float)DirectionB(A, B));
+            double l = dir.Length();
+            dir = new Vector2((float)(DirectionA(A, B)/l), (float)(DirectionB(A, B) / l));
+
+            Vector2 dirClock = new Vector2(dir.Y, - dir.X);
+            Vector2 dirAntiClock = new Vector2(-dir.Y,dir.X);
+
+            Vector2 p1 = new Vector2((float)A, (float)B);
+            Vector2 p2 = new Vector2(dir.X + dirClock.X / 2, dir.Y + dirClock.Y / 2);
+            Vector2 p3 = new Vector2(dir.X + dirAntiClock.X / 2, dir.Y + dirAntiClock.Y / 2);
+
+            return new List<Vector2>() { p1, p2, p3 };
+        }
+
 
 
         private static double gamma = 2, beta = 0.5, fi = -0.5;
 
         public static Vector2 SearchSimplex(double A, double B)// start point
         {
+            List<Vector2> initPoints = InitPoints(A, B, 0.2);
+            initPoints = initPoints.OrderBy(i => Volume(i.X, i.Y)).ToList();
+
+
 
 
         }
