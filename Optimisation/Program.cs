@@ -164,58 +164,76 @@ namespace Optimisation
             Vector2 xsum = xg + xl;
             Vector2 xc = new Vector2(xsum.Y / 2, xsum.Y / 2);
 
-
-            float lambda = 1 + GetStopSign();
-
             Vector2 vector = xc - xh;
-            return xh +  new Vector2(vector.X * lambda, vector.Y * lambda);
+            Vector2 np = xc + new Vector2(vector.X, vector.Y);
+
+
+            float lambda =  GetStopSign(xh, xg, xl, np); 
+
+            return  xc + new Vector2(vector.X * lambda, vector.Y * lambda);
         }
 
-        private static double GetStopSign(Vector3 vg, Vector2 xh, Vector2 xc, Vector2 xl, Vector2 np)
+        private static float GetStopSign(Vector2 xh, Vector2 xg, Vector2 xl, Vector2 np)
         {
             double Vh = Volume(xh.X, xh.Y);
-            double Vc = Volume(xc.X, xc.Y);
             double Vl = Volume(xl.X, xl.Y);
-            double Vg = Volume(vg.X, vg.Y);
-
+            double Vg = Volume(xg.X, xg.Y);
             double Vnp = Volume(np.X, np.Y);
 
-            if (Vl < Vnp && Vnp < Vg) return 1;
+            /*if (Vl < Vnp && Vnp < Vg) return 1;
             if (Vnp < Vl) return gamma;
             if (Vnp > Vh) return fi;
-            if (Vg < Vnp && Vnp < Vh) return beta;
+            if (Vg < Vnp && Vnp < Vh) return beta;*/
 
-            return 1;
+            if (Vg < Vnp && Vnp < Vl) return beta;
+            if (Vnp > Vl) return gamma;
+            if (Vnp < Vh) return fi;
+            //if (Vg < Vnp && Vnp < Vh) return beta;
+
+            return 0.5f;
         }
 
         private static List<Vector2> InitPoints(double A, double B, double size)
         {
             Vector2 dir = new Vector2((float)DirectionA(A, B), (float)DirectionB(A, B));
             double l = dir.Length();
-            dir = new Vector2((float)(DirectionA(A, B)/l), (float)(DirectionB(A, B) / l));
+            dir = new Vector2((float)(DirectionA(A, B)/l * size), (float)(DirectionB(A, B) / l * size));
 
             Vector2 dirClock = new Vector2(dir.Y, - dir.X);
             Vector2 dirAntiClock = new Vector2(-dir.Y,dir.X);
 
             Vector2 p1 = new Vector2((float)A, (float)B);
-            Vector2 p2 = new Vector2(dir.X + dirClock.X / 2, dir.Y + dirClock.Y / 2);
-            Vector2 p3 = new Vector2(dir.X + dirAntiClock.X / 2, dir.Y + dirAntiClock.Y / 2);
+            Vector2 p2 = p1 + new Vector2(dir.X + dirClock.X / 2, dir.Y + dirClock.Y / 2);
+            Vector2 p3 = p1 + new Vector2(dir.X + dirAntiClock.X / 2, dir.Y + dirAntiClock.Y / 2);
 
             return new List<Vector2>() { p1, p2, p3 };
         }
 
 
 
-        private static double gamma = 2, beta = 0.5, fi = -0.5;
+        private static float gamma = 2f, beta = 0.5f, fi = -0.5f;
 
         public static Vector2 SearchSimplex(double A, double B)// start point
         {
-            List<Vector2> initPoints = InitPoints(A, B, 0.2);
-            initPoints = initPoints.OrderBy(i => Volume(i.X, i.Y)).ToList();
+            List<Vector2> Points = InitPoints(A, B, 0.001);
+            Points = Points.OrderBy(i => Volume(i.X, i.Y)).ToList();
 
+            Vector2 np = Points[2];
+            int n = 0;
+            while (n < 1000)
+            { 
+                np = NewPoint(Points[0], Points[1], Points[2]);
+                if ((np-Points[0]).Length() < epsilon/10000) break;
 
+                Points[0] = np;
+                Points = Points.OrderBy(i => Volume(i.X, i.Y)).ToList();
+                Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", Points[0].X, Points[0].Y, Volume(Points[0].X, Points[0].Y)));
 
+                n++;
+            }
+            Console.WriteLine(n);
 
+            return np;
         }
 
 
@@ -236,7 +254,7 @@ namespace Optimisation
     {
         static void Main(string[] args)
         {
-            Optimizator.Search(1, 1);
+            Optimizator.SearchSimplex(1, 1);
         }
     }
 }
