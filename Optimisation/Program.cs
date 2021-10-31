@@ -16,10 +16,14 @@ namespace Optimisation
         {
             return -0.125 * A * (2 * B + A - 1);
         }
+        private static double Volume(double A, double B)
+        {
+            return 0.125 * A * B * (1 - (A + B));
+        }
 
         private static double Step(double A, double B)
         {
-            return epsilon;
+            return gamm;
         }
 
 
@@ -34,11 +38,11 @@ namespace Optimisation
             return Volume(A + dir.X * d, B + dir.Y * d);
         }
 
-        private static double optimisationEpsilon = 0.000000001;
+        private static double optimisationEpsilon = 0.000001;
         private static double StepOptimised(double A, double B)
         {
             double min = 0;
-            double max =  Math.Sqrt(A * A + B * B);
+            double max = Math.Sqrt(A * A + B * B);
             double from = max;
 
             double DV = Volume(A, B);
@@ -48,6 +52,7 @@ namespace Optimisation
             double d = 0.0001;
 
             double DVMax, DVMin;
+            int n = 0;
             while (true)
             {
                 mid = (min + max) / 2;
@@ -73,24 +78,31 @@ namespace Optimisation
                     if (Math.Abs(DVMin - DV) < optimisationEpsilon) break;
                     DV = DVMin;
                 }
+                n++;
             }
+
+            if (from < 1) from = 1;
             return d;
         }
 
 
 
-        private static double Volume (double A, double B)
-        {
-            return 0.125 * A * B*(1 - (A + B));
-        }
+        
 
-
-        private static double epsilon = 1;
+        private static double gamm = 3;
+        private static double endCondition = 0.001;
         private static bool ResultFound(double A, double B)
         {
             double dirA = DirectionA(A, B);
             double dirB = DirectionB(A, B);
-            return Math.Sqrt(dirA*dirA + dirB*dirB) > epsilon/10000;
+            return Math.Sqrt(dirA*dirA + dirB*dirB) > endCondition;
+        }
+
+        private static bool ResultFoundS(double A, double B)
+        {
+            double dirA = DirectionA(A, B);
+            double dirB = DirectionB(A, B);
+            return Math.Sqrt(dirA * dirA + dirB * dirB) > endCondition;
         }
 
 
@@ -98,23 +110,30 @@ namespace Optimisation
         public static Vector2 Search(double A, double B)
         {
             double V=0;
-            double a, b;
             int n = 0;
 
-            Console.WriteLine(B.ToString().Replace(",", "."));
-            while (ResultFound(A,B))
+            Console.WriteLine(A.ToString().Replace(",", ".") + " " + B.ToString().Replace(",", "."));
+
+            while (/*ResultFound(A,B)*/ true)
             {
-                A = A + Step(A, B) * DirectionA(A, B);
-                B = B + Step(A, B) * DirectionB(A, B);
+                double a = A + Step(A, B) * DirectionA(A, B) ;
+                double b = B + Step(A, B) * DirectionB(A, B) ;
+
+                A = a;
+                B = b;
+                if (Math.Abs(V - Volume(A, B)) < endCondition) break;
                 V = Volume(A,B);
 
+
                 n++;
-                Console.WriteLine(B.ToString().Replace(",", "."));
+                Console.WriteLine(A.ToString().Replace(",", ".") + " " + B.ToString().Replace(",", "."));
+
             }
-            Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", A, B, V));
+            //Console.WriteLine("V = " + Volume(A, B));
+            Console.WriteLine("\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n");
 
+            Console.WriteLine("n = " + n);
 
-            Console.WriteLine(n);
 
             return new Vector2((float)A, (float)B);
         }
@@ -125,8 +144,9 @@ namespace Optimisation
             double a, b;
             int n = 0;
 
-            Console.WriteLine(A.ToString().Replace(",", "."));
-            while (ResultFound(A, B))
+            Console.WriteLine(A.ToString().Replace(",", ".") + " " + B.ToString().Replace(",", "."));
+
+            while (n < 200 /*ResultFoundS(A, B)*/)
             {
                 Vector2 dir = new Vector2((float)DirectionA(A, B), (float)DirectionB(A, B));
                 float l = dir.Length();
@@ -134,15 +154,21 @@ namespace Optimisation
 
 
                 double d = StepOptimised(A, B) ;
+                Console.WriteLine("d : " + d);
                 A = A + d * dir.X;
                 B = B + d * dir.Y;
+
+                if (Math.Abs(V - Volume(A, B)) < endCondition/100) break;
                 V = Volume(A, B);
 
-                n++;
-                Console.WriteLine(A.ToString().Replace(",", "."));
-            }
-            Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", A, B, V));
 
+               // Console.WriteLine(A.ToString().Replace(",", ".") + " " + B.ToString().Replace(",", "."));
+
+                n++;
+            }
+             Console.WriteLine(String.Format("A = {0} B = {1} V = {2}", A, B, V));
+
+            Console.WriteLine("\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n");
 
             Console.WriteLine(n);
 
@@ -169,7 +195,6 @@ namespace Optimisation
 
 
             float lambda = GetStopSign(xh, xg, xl, np);
-            Console.WriteLine(lambda);
 
             return  xc + new Vector2(vector.X * lambda, vector.Y * lambda);
         }
@@ -192,9 +217,12 @@ namespace Optimisation
 
         private static List<Vector2> InitPoints(double A, double B, double size)
         {
-            Vector2 dir = new Vector2((float)DirectionA(A, B), (float)DirectionB(A, B));
+            Vector2 dir = new Vector2((float)DirectionA(A, B), (float)DirectionB(A, B)); // faster type
+            
             double l = dir.Length();
-            dir = new Vector2((float)(DirectionA(A, B)/l * size), (float)(DirectionB(A, B) / l * size));
+            dir = new Vector2((float)(DirectionA(A, B) / l * size), (float)(DirectionB(A, B) / l * size));
+
+           
 
             Vector2 dirClock = new Vector2(dir.Y, - dir.X);
             Vector2 dirAntiClock = new Vector2(-dir.Y,dir.X);
@@ -203,47 +231,55 @@ namespace Optimisation
             Vector2 p2 = p1 + new Vector2(dir.X + dirClock.X, dir.Y + dirClock.Y);
             Vector2 p3 = p1 + new Vector2(dir.X + dirAntiClock.X, dir.Y + dirAntiClock.Y);
 
+            if (A == 0 && B == 0) // for finding solution where gradient is 0
+            {
+                p2 = p1 + new Vector2((float)(A + size), (float)B);
+                p3 = p1 + new Vector2((float)(A), (float)(B + size));
+            }
+
             return new List<Vector2>() { p1, p2, p3 };
         }
 
 
 
         private static float gamma = 2f, beta = 0.5f, fi = -0.5f;
+        private static float alfa = 0.2f;
 
         public static Vector2 SearchSimplex(double A, double B)// start point
         {
-            List<Vector2> Points = InitPoints(A, B, 0.5);
+            List<Vector2> Points = InitPoints(A, B, alfa);
             Points = Points.OrderBy(i => Volume(i.X, i.Y)).ToList();
 
             Vector2 np = Points[2];
             int n = 0;
 
-            Console.WriteLine(B.ToString().Replace(",", "."));
-            while (n < 1000)
+            Console.WriteLine(A.ToString().Replace(",", ".") + " " + B.ToString().Replace(",", "."));
+            while (n < 200)
             { 
                 np = NewPoint(Points[0], Points[1], Points[2]);
 
                 A = np.X;
                 B = np.Y;
-                Console.WriteLine(B.ToString().Replace(",", "."));
+                Console.WriteLine(A.ToString().Replace(",", ".") +" " + B.ToString().Replace(",", "."));
 
-                if ((np-Points[0]).Length() < epsilon/1000000) 
+                if ((np-Points[0]).Length() < endCondition) 
                     break;
 
                 Points[0] = np;
                 Points = Points.OrderBy(i => Volume(i.X, i.Y)).ToList();
 
-
-               
-
                 n++;
             }
+            Console.Write(Volume(A, B));
 
-            Console.WriteLine(n);
+            // Console.WriteLine("V = " + Volume(A, B));
+            Console.WriteLine("\n \n \n \n \n \n \n \n \n \n \n \n \n \n \n \n");
+
+
+            Console.WriteLine("n = " + n);
 
             return np;
         }
-
 
 
         #endregion
@@ -262,7 +298,7 @@ namespace Optimisation
     {
         static void Main(string[] args)
         {
-            Optimizator.SearchSimplex(1, 1);
+            Optimizator.SearchSimplex(0,0);
         }
     }
 }
